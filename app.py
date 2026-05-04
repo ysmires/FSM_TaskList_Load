@@ -3,9 +3,21 @@ import zipfile, io, openpyxl
 
 app = Flask(__name__)
 
+@app.after_request
+def add_headers(response):
+    response.headers["X-Frame-Options"] = "ALLOWALL"
+    response.headers["Content-Security-Policy"] = "frame-ancestors *"
+    return response
+
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/template")
+def download_template():
+    return send_file("static/template.xlsx",
+                     as_attachment=True,
+                     download_name="template.xlsx")
 
 @app.route("/generate", methods=["POST"])
 def generate():
