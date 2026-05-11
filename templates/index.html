@@ -1,170 +1,709 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Excel → ZIP</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FSM Extension</title>
+
+  <!--
+    ╔══════════════════════════════════════════════════════════════╗
+    ║  FSM Shell SDK — injection statique (alternative à npm)      ║
+    ║  https://sap.github.io/fsm-shell/#/installation              ║
+    ║  Une fois chargé, ShellSdk et SHELL_EVENTS sont disponibles  ║
+    ║  via l'objet global FSMShell.                                ║
+    ╚══════════════════════════════════════════════════════════════╝
+  -->
+  <script src="https://unpkg.com/fsm-shell"></script>
+
   <style>
+    :root {
+      --blue:       #0070f2;
+      --blue-dark:  #0053b3;
+      --green:      #107e3e;
+      --red:        #bb0000;
+      --orange:     #e9730c;
+      --bg:         #f5f6f7;
+      --surface:    #ffffff;
+      --border:     #d9d9d9;
+      --text:       #32363a;
+      --muted:      #6a6d70;
+      --radius:     8px;
+      --shadow:     0 2px 12px rgba(0,0,0,.08);
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; min-height: 100vh; background: #f5f5f4; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-    .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 16px; padding: 2.5rem 2rem; width: 100%; max-width: 480px; }
-    .logo { width: 40px; height: 40px; background: #4f46e5; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; }
-    h1 { font-size: 20px; font-weight: 600; color: #111; margin-bottom: 6px; }
-    .subtitle { font-size: 14px; color: #6b7280; margin-bottom: 2rem; line-height: 1.5; }
-    .steps { display: flex; align-items: center; margin-bottom: 2rem; }
-    .step { text-align: center; }
-    .step-num { width: 26px; height: 26px; border-radius: 50%; background: #f3f4f6; border: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: center; margin: 0 auto 4px; font-size: 11px; font-weight: 600; color: #9ca3af; }
-    .step.done .step-num { background: #4f46e5; border-color: #4f46e5; color: #fff; }
-    .step-line { flex: 1; height: 1px; background: #e5e5e5; }
-    .step-label { font-size: 11px; color: #9ca3af; }
-    .step.done .step-label { color: #4f46e5; }
-    .btn-template { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; border-radius: 10px; font-size: 14px; font-weight: 500; text-decoration: none; margin-bottom: 1.25rem; transition: background 0.2s; }
-    .btn-template:hover { background: #dcfce7; }
-    .drop-zone { border: 2px dashed #d1d5db; border-radius: 12px; padding: 2rem 1rem; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 1.25rem; }
-    .drop-zone:hover { border-color: #4f46e5; background: #f5f3ff; }
-    .drop-label { font-size: 14px; color: #6b7280; }
-    .drop-label span { color: #4f46e5; font-weight: 500; }
-    .file-types { font-size: 12px; color: #9ca3af; margin-top: 4px; }
-    .file-chosen { display: none; align-items: center; gap: 10px; background: #f9fafb; border-radius: 10px; padding: 10px 14px; margin-bottom: 1.25rem; font-size: 14px; }
-    .fname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #111; }
-    .remove { cursor: pointer; color: #9ca3af; font-size: 20px; line-height: 1; }
-    .remove:hover { color: #ef4444; }
-    .btn { width: 100%; padding: 11px; background: #4f46e5; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
-    .btn:hover { background: #4338ca; }
-    .btn:disabled { background: #d1d5db; cursor: not-allowed; }
+    body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* TOP BAR */
+    .topbar {
+      background: var(--blue); color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 48px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.18);
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .topbar-logo { font-size: 17px; font-weight: 700; }
+    .topbar-sub  { font-size: 12px; opacity: .75; }
+    .topbar-right{ display: flex; align-items: center; gap: 10px; }
+    .sdk-ver     { font-size: 10px; opacity: .55; font-family: monospace; }
+
+    /* BADGE */
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+    }
+    .badge::before { content:''; width:7px; height:7px; border-radius:50%; background:currentColor; filter:brightness(1.5); }
+    .b-loading    { background: rgba(255,255,255,.15); color: #fff; }
+    .b-ok         { background: #dff0e1; color: var(--green);  }
+    .b-error      { background: #fce8e8; color: var(--red);    }
+    .b-warn       { background: #fdf0e1; color: var(--orange); }
+    .b-standalone { background: rgba(255,255,255,.2); color: #fff; }
+
+    /* LAYOUT */
+    .layout {
+      display: grid;
+      grid-template-columns: 270px 1fr;
+      gap: 20px;
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 20px;
+    }
+
+    /* PANEL */
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .panel + .panel { margin-top: 16px; }
+    .ph { padding: 13px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .ph h2 { font-size: 13px; font-weight: 700; }
+    .ph-icon { width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+    .ph-icon.blue  { background: #e8f2ff; }
+    .ph-icon.green { background: #dff0e1; }
+    .ph-icon.gray  { background: #f0f0f0; }
+    .pb { padding: 16px 18px; }
+
+    /* CONTEXT LIST */
+    .ctx-item { display: flex; flex-direction: column; gap: 2px; padding: 9px 0; border-bottom: 1px solid #f0f0f0; }
+    .ctx-item:last-child { border-bottom: none; }
+    .ctx-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 700; }
+    .ctx-val { font-size: 13px; font-weight: 500; word-break: break-all; }
+    .ctx-val.empty { color: #ccc; font-style: italic; }
+
+    /* PERMISSIONS */
+    .perm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+    .perm-card { border: 1px solid var(--border); border-radius: 6px; padding: 9px 11px; }
+    .perm-name { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); margin-bottom: 5px; }
+    .crud-row  { display: flex; gap: 4px; flex-wrap: wrap; }
+    .ctag { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+    .ctag.y { background: #dff0e1; color: var(--green); }
+    .ctag.n { background: #fce8e8; color: var(--red);   }
+
+    /* SETTINGS */
+    .set-list  { display: flex; flex-direction: column; gap: 7px; margin-top: 6px; }
+    .set-row   { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; background: #fafafa; border: 1px solid #ebebeb; border-radius: 6px; font-size: 12px; }
+    .set-key   { color: var(--muted); font-weight: 700; }
+    .set-val   { color: var(--text);  font-weight: 500; text-align: right; max-width: 60%; word-break: break-all; }
+
+    /* UPLOAD */
+    .drop-zone {
+      border: 2px dashed var(--border); border-radius: var(--radius);
+      padding: 34px 20px; text-align: center; cursor: pointer;
+      transition: border-color .2s, background .2s; position: relative;
+    }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--blue); background: #f0f7ff; }
+    .drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .dz-icon  { font-size: 30px; margin-bottom: 7px; }
+    .dz-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+    .dz-hint  { font-size: 12px; color: var(--muted); }
+
+    .file-chip {
+      display: none; align-items: center; gap: 7px;
+      margin-top: 11px; padding: 7px 12px;
+      background: #f0f7ff; border: 1px solid #b3d4f5; border-radius: 6px;
+      font-size: 12px; color: var(--blue-dark);
+    }
+    .file-chip.show { display: flex; }
+
+    /* PROGRESS */
+    .prog-wrap { height: 4px; background: #eee; border-radius: 4px; margin-top: 14px; display: none; }
+    .prog-wrap.show { display: block; }
+    .prog-bar  { height: 100%; background: var(--blue); border-radius: 4px; width: 0%; transition: width .3s; }
+
+    /* BUTTONS */
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: background .15s, transform .1s; }
+    .btn:active { transform: scale(.98); }
+    .btn-p { background: var(--blue); color: #fff; }
+    .btn-p:hover { background: var(--blue-dark); }
+    .btn-s { background: #fff; color: var(--blue); border: 1px solid var(--blue); }
+    .btn-s:hover { background: #f0f7ff; }
+    .btn-grp { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ERROR BANNER */
+    .err-banner {
+      display: none; align-items: center; gap: 10px;
+      margin-top: 14px; padding: 10px 14px;
+      background: #fce8e8; border: 1px solid #f5b8b8; border-radius: 6px;
+      font-size: 12px; color: var(--red);
+    }
+    .err-banner.show { display: flex; }
+
+    /* LOG */
+    .log-box {
+      background: #1c1c1e; color: #d4f1d4; font-family: monospace; font-size: 11px;
+      border-radius: 6px; padding: 11px 13px; height: 175px; overflow-y: auto;
+      margin-top: 14px; line-height: 1.75;
+    }
+    .lt  { color: #6e6e73; }
+    .li  { color: #d4f1d4; }
+    .lw  { color: #ffe08a; }
+    .le  { color: #ff7070; }
+    .ls  { color: #7ec8f7; }
+
+    /* DIVIDER */
+    hr { border: none; border-top: 1px solid #f0f0f0; margin: 18px 0; }
+
+    /* TOAST */
+    #toast {
+      position: fixed; bottom: 22px; right: 22px;
+      background: #32363a; color: #fff;
+      padding: 11px 18px; border-radius: 8px; font-size: 13px; font-weight: 500;
+      box-shadow: 0 4px 20px rgba(0,0,0,.25);
+      transform: translateY(70px); opacity: 0;
+      transition: transform .25s, opacity .25s;
+      z-index: 999; max-width: 300px;
+    }
+    #toast.show    { transform: translateY(0); opacity: 1; }
+    #toast.success { border-left: 4px solid var(--green);  }
+    #toast.error   { border-left: 4px solid var(--red);    }
+    #toast.info    { border-left: 4px solid var(--blue);   }
+
+    @media(max-width:700px){ .layout{ grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-      </svg>
-    </div>
 
-    <div class="steps">
-      <div class="step" id="s1">
-        <div class="step-num">1</div>
-        <div class="step-label">Template</div>
-      </div>
-      <div class="step-line"></div>
-      <div class="step" id="s2">
-        <div class="step-num">2</div>
-        <div class="step-label">Chargement</div>
-      </div>
-      <div class="step-line"></div>
-      <div class="step" id="s3">
-        <div class="step-num">3</div>
-        <div class="step-label">Traitement</div>
-      </div>
-      <div class="step-line"></div>
-      <div class="step" id="s4">
-        <div class="step-num">4</div>
-        <div class="step-label">Téléchargement</div>
-      </div>
-    </div>
-
-    <h1>Convertir Excel en ZIP</h1>
-    <p class="subtitle">Téléchargez le template, remplissez-le et chargez-le pour générer votre ZIP.</p>
-
-    <a href="/template" class="btn-template" onclick="document.getElementById('s1').classList.add('done')">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-      </svg>
-      Télécharger le template Excel
-    </a>
-
-    <form id="uploadForm" action="/generate" method="POST" enctype="multipart/form-data">
-      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5" style="margin:0 auto 12px;display:block">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="17 8 12 3 7 8"/>
-          <line x1="12" y1="3" x2="12" y2="15"/>
-        </svg>
-        <p class="drop-label"><span>Cliquez pour choisir</span> ou glissez un fichier</p>
-        <p class="file-types">.xlsx ou .xls</p>
-        <input type="file" id="fileInput" name="excel_file" accept=".xlsx,.xls" style="display:none" required>
-      </div>
-
-      <div class="file-chosen" id="fileChosen">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-        </svg>
-        <span class="fname" id="fileName"></span>
-        <span class="remove" id="removeFile">×</span>
-      </div>
-
-      <button class="btn" id="submitBtn" type="submit" disabled>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-        Générer le ZIP
-      </button>
-    </form>
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="topbar-logo">⚙ FSM Extension</span>
+    <span class="topbar-sub">Traitement de fichiers Excel</span>
   </div>
+  <div class="topbar-right">
+    <span id="sdkVer" class="sdk-ver"></span>
+    <span id="sdkStatus" class="badge b-loading">Connexion SDK…</span>
+  </div>
+</header>
 
-  <script>
-    const fileInput = document.getElementById('fileInput');
-    const fileChosen = document.getElementById('fileChosen');
-    const dropZone = document.getElementById('dropZone');
-    const fileName = document.getElementById('fileName');
-    const submitBtn = document.getElementById('submitBtn');
+<!-- LAYOUT -->
+<div class="layout">
 
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files[0]) {
-        fileName.textContent = fileInput.files[0].name;
-        fileChosen.style.display = 'flex';
-        dropZone.style.display = 'none';
-        submitBtn.disabled = false;
-        document.getElementById('s2').classList.add('done');
+  <!-- ── SIDEBAR ── -->
+  <aside>
+    <!-- Contexte FSM -->
+    <div class="panel">
+      <div class="ph"><div class="ph-icon blue">👤</div><h2>Contexte FSM</h2></div>
+      <div class="pb">
+        <div class="ctx-item"><span class="ctx-lbl">Utilisateur</span><span class="ctx-val empty" id="c-user">—</span></div>
+        <div class="ctx-item"><span class="ctx-lbl">Compte</span><span class="ctx-val empty" id="c-account">—</span></div>
+        <div class="ctx-item"><span class="ctx-lbl">Société</span><span class="ctx-val empty" id="c-company">—</span></div>
+        <div class="ctx-item"><span class="ctx-lbl">ERP Type</span><span class="ctx-val empty" id="c-erp">—</span></div>
+        <div class="ctx-item"><span class="ctx-lbl">Locale</span><span class="ctx-val empty" id="c-locale">—</span></div>
+        <div class="ctx-item"><span class="ctx-lbl">Cloud Host</span><span class="ctx-val empty" id="c-host">—</span></div>
+      </div>
+    </div>
+
+    <!-- Permissions -->
+    <div class="panel">
+      <div class="ph"><div class="ph-icon green">🔐</div><h2>Permissions</h2></div>
+      <div class="pb">
+        <div id="permGrid" class="perm-grid">
+          <p style="font-size:12px;color:var(--muted);grid-column:span 2">En attente du contexte…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="panel">
+      <div class="ph"><div class="ph-icon gray">⚙️</div><h2>Paramètres société</h2></div>
+      <div class="pb">
+        <div id="settingsList" class="set-list">
+          <p style="font-size:12px;color:var(--muted)">En attente…</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main>
+    <div class="panel">
+      <div class="ph"><div class="ph-icon blue">📂</div><h2>Traitement Excel → ZIP</h2></div>
+      <div class="pb">
+
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">
+          Téléchargez le template, remplissez-le, puis uploadez-le pour générer le ZIP.
+        </p>
+        <a href="/template" class="btn btn-s" style="text-decoration:none">⬇ Télécharger le template</a>
+
+        <hr/>
+
+        <!-- Drop zone -->
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" accept=".xlsx,.xls"/>
+          <div class="dz-icon">📊</div>
+          <div class="dz-title">Glissez votre fichier Excel ici</div>
+          <div class="dz-hint">ou cliquez pour parcourir — .xlsx / .xls</div>
+        </div>
+
+        <div class="file-chip" id="fileChip">📎 <span id="fileName"></span></div>
+        <div class="err-banner" id="errBanner">⚠ <span id="errMsg"></span></div>
+
+        <div class="prog-wrap" id="progWrap"><div class="prog-bar" id="progBar"></div></div>
+
+        <div class="btn-grp">
+          <button class="btn btn-p" id="btnGen" disabled>⚡ Générer le ZIP</button>
+          <button class="btn btn-s" id="btnClear">✕ Effacer</button>
+        </div>
+
+        <div class="log-box" id="logBox"></div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT
+     Le SDK FSM est chargé via <script src="unpkg.com/fsm-shell">
+     → disponible dans window.FSMShell  (ShellSdk, SHELL_EVENTS)
+════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  // ── Config (à adapter) ─────────────────────────────────────────────────────
+  const CONFIG = {
+    clientIdentifier: 'fsm-excel-extension',   // ← votre identifiant applicatif
+    clientSecret:     'YOUR_CLIENT_SECRET',     // ← votre secret applicatif
+    permissions:      ['ACTIVITY', 'SERVICECALL'],
+    settingsKeys:     ['userPerson', [['CoreSystems', 'FSM', 'StandaloneCompany']]],
+    storageKeys:      ['Cockpit_SelectedCompanyName', 'Cockpit_SelectedLanguage', 'Shell_SelectedThemeId'],
+    maxRetries:       3,
+    retryDelayMs:     2000,
+  };
+
+  // ── État SDK ────────────────────────────────────────────────────────────────
+  let shellSdk     = null;
+  let SHELL_EVENTS = null;
+  let retries      = {};
+  let retryTimers  = {};
+
+  // ── État fichier ────────────────────────────────────────────────────────────
+  let selectedFile = null;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HELPERS UI
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function ts() {
+    return new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  }
+
+  function log(msg, type = 'i') {
+    const box  = document.getElementById('logBox');
+    const line = document.createElement('div');
+    line.innerHTML = `<span class="lt">[${ts()}]</span> <span class="l${type}">${msg}</span>`;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function toast(msg, type = 'info') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'show ' + type;
+    setTimeout(() => { el.className = ''; }, 3200);
+  }
+
+  function setStatus(label, cls) {
+    const el = document.getElementById('sdkStatus');
+    el.textContent = label;
+    el.className = 'badge ' + cls;
+  }
+
+  function setCtx(id, val) {
+    if (!val) return;
+    const el = document.getElementById(id);
+    el.textContent = val;
+    el.classList.remove('empty');
+  }
+
+  function showError(msg) {
+    const banner = document.getElementById('errBanner');
+    document.getElementById('errMsg').textContent = msg;
+    banner.classList.add('show');
+    setTimeout(() => banner.classList.remove('show'), 6000);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RETRY LOGIC
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function canRetry(key) {
+    retries[key] = retries[key] || 0;
+    return retries[key] < CONFIG.maxRetries;
+  }
+
+  function scheduleRetry(key, fn) {
+    if (!canRetry(key)) {
+      log(`⛔ Abandon de ${key} après ${CONFIG.maxRetries} tentatives`, 'e');
+      showError(`Échec définitif de l'événement SDK : ${key}`);
+      return;
+    }
+    retries[key]++;
+    const delay = CONFIG.retryDelayMs * retries[key];
+    log(`🔄 Retry ${retries[key]}/${CONFIG.maxRetries} pour ${key} dans ${delay}ms`, 'w');
+    clearTimeout(retryTimers[key]);
+    retryTimers[key] = setTimeout(fn, delay);
+  }
+
+  function resetRetry(key) {
+    retries[key] = 0;
+    clearTimeout(retryTimers[key]);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FSM SHELL SDK  —  initialisation via injection statique (unpkg)
+  //
+  //  import { ShellSdk, SHELL_EVENTS } from 'fsm-shell'
+  //  ↓ équivalent statique :
+  //  const { ShellSdk, SHELL_EVENTS } = FSMShell;
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function initSdk() {
+
+    // Vérifier que le script unpkg est bien chargé
+    if (typeof FSMShell === 'undefined') {
+      log('⚠ FSMShell non disponible (CDN non chargé ?)', 'w');
+      setStatus('Erreur CDN', 'b-error');
+      showError('Le SDK FSM Shell n\'a pas pu être chargé depuis unpkg.com');
+      return;
+    }
+
+    // Récupérer ShellSdk et SHELL_EVENTS depuis le global FSMShell
+    // Équivaut à : import { ShellSdk, SHELL_EVENTS } from 'fsm-shell';
+    const ShellSdk = FSMShell.ShellSdk;
+    SHELL_EVENTS   = FSMShell.SHELL_EVENTS;
+
+    // Afficher la version SDK dans la topbar
+    document.getElementById('sdkVer').textContent =
+      `v${ShellSdk.VERSION}`;
+    log(`fsm-shell v${ShellSdk.VERSION} — build: ${ShellSdk.BUILD_TS}`, 's');
+
+    // ── Vérifier si on tourne dans le Shell FSM ─────────────────────────────
+    // ShellSdk.isInsideShell() → static, disponible avant init()
+    if (!ShellSdk.isInsideShell()) {
+      setStatus('Standalone', 'b-standalone');
+      log('⚠ ShellSdk.isInsideShell() → false — mode autonome activé', 'w');
+      toast('Mode standalone : fonctionnalités SDK désactivées', 'info');
+      // On continue quand même pour que l'UI upload/generate soit utilisable
+      return;
+    }
+
+    // ── Initialiser le SDK ──────────────────────────────────────────────────
+    // ShellSdk.init(parent, origin)
+    //   parent : window.parent (la fenêtre Shell qui héberge notre iframe)
+    //   origin : '*' en dév, à restreindre en prod
+    shellSdk = ShellSdk.init(parent, '*');
+
+    log(`SDK initialisé — isInsideShellModal: ${shellSdk.isInsideShellModal()}`, 's');
+    setStatus('Connexion…', 'b-loading');
+
+    // ── Gestion des erreurs SDK (OBLIGATOIRE selon la doc SAP) ─────────────
+    shellSdk.on(SHELL_EVENTS.ERROR, function (error) {
+      log('❌ SHELL_EVENTS.ERROR : ' + JSON.stringify(error), 'e');
+      setStatus('Erreur SDK', 'b-error');
+      toast('Erreur SDK FSM — voir la console', 'error');
+
+      // Retry ciblé selon l'événement source
+      if (error && error.event === SHELL_EVENTS.Version1.REQUIRE_CONTEXT) {
+        scheduleRetry('REQUIRE_CONTEXT', emitRequireContext);
+      }
+      if (error && error.event === SHELL_EVENTS.Version3.GET_PERMISSIONS) {
+        scheduleRetry('GET_PERMISSIONS', emitGetPermissions);
       }
     });
 
-    document.getElementById('removeFile').addEventListener('click', () => {
-      fileInput.value = '';
-      fileChosen.style.display = 'none';
-      dropZone.style.display = 'block';
-      submitBtn.disabled = true;
-      document.getElementById('s2').classList.remove('done');
+    // ── Écoute TO_APP (messages depuis extensions filles) ───────────────────
+    shellSdk.on(SHELL_EVENTS.Version1.TO_APP, function (content, origin) {
+      log('📨 TO_APP reçu de ' + origin + ' : ' + JSON.stringify(content), 's');
     });
 
-    document.getElementById('uploadForm').addEventListener('submit', () => {
-      document.getElementById('s3').classList.add('done');
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 16 14"/>
-        </svg>
-        Traitement en cours...`;
+    // ── Écoute MODAL.CLOSE ──────────────────────────────────────────────────
+    shellSdk.on(SHELL_EVENTS.Version1.MODAL.CLOSE, function (data) {
+      log('📨 MODAL.CLOSE' + (data ? ' : ' + JSON.stringify(data) : ''), 's');
     });
 
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = '#4f46e5'; dropZone.style.background = '#f5f3ff'; });
-    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#d1d5db'; dropZone.style.background = ''; });
-    dropZone.addEventListener('drop', e => {
+    // ── Lancer REQUIRE_CONTEXT ──────────────────────────────────────────────
+    emitRequireContext();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // REQUIRE_CONTEXT
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function emitRequireContext() {
+    if (!shellSdk) return;
+
+    function handler(context, origin) {
+      log('✅ REQUIRE_CONTEXT reçu (origin: ' + origin + ')', 's');
+      resetRetry('REQUIRE_CONTEXT');
+      setStatus('Connecté', 'b-ok');
+      toast('Bonjour ' + (context.user || 'utilisateur') + ' 👋', 'success');
+
+      // Remplir la sidebar contexte
+      setCtx('c-user',    context.user    || context.userId);
+      setCtx('c-account', context.account || context.accountId);
+      setCtx('c-company', context.company || context.companyId);
+      setCtx('c-erp',     context.erpType);
+      setCtx('c-locale',  context.selectedLocale);
+      setCtx('c-host',    context.cloudHost);
+
+      // Se désabonner (évite les appels en double)
+      shellSdk.off(SHELL_EVENTS.Version1.REQUIRE_CONTEXT, handler);
+
+      // Enchaîner les autres événements SDK
+      emitGetPermissions();
+      emitGetSettings();
+      emitGetStorageItem();
+    }
+
+    shellSdk.on(SHELL_EVENTS.Version1.REQUIRE_CONTEXT, handler);
+
+    shellSdk.emit(SHELL_EVENTS.Version1.REQUIRE_CONTEXT, {
+      clientIdentifier: CONFIG.clientIdentifier,
+      clientSecret:     CONFIG.clientSecret,
+      auth:             { response_type: 'token' },
+      cloudStorageKeys: [],   // enregistrer ici vos clés custom si besoin
+    });
+
+    log('📤 REQUIRE_CONTEXT émis', 's');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GET_PERMISSIONS  (Version 3 — recommandée)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function emitGetPermissions() {
+    if (!shellSdk) return;
+
+    var payload = CONFIG.permissions.map(function (name) {
+      return { objectName: name };
+    });
+
+    function handler(resp, origin) {
+      log('✅ GET_PERMISSIONS reçu', 's');
+      resetRetry('GET_PERMISSIONS');
+      var list = Array.isArray(resp) ? resp : [resp];
+      renderPermissions(list);
+      shellSdk.off(SHELL_EVENTS.Version3.GET_PERMISSIONS, handler);
+    }
+
+    shellSdk.on(SHELL_EVENTS.Version3.GET_PERMISSIONS, handler);
+    shellSdk.emit(SHELL_EVENTS.Version3.GET_PERMISSIONS, payload);
+    log('📤 GET_PERMISSIONS émis pour : ' + CONFIG.permissions.join(', '), 's');
+  }
+
+  function renderPermissions(list) {
+    var grid = document.getElementById('permGrid');
+    grid.innerHTML = '';
+    list.forEach(function (item) {
+      var p    = item.permission;
+      var card = document.createElement('div');
+      card.className = 'perm-card';
+      card.innerHTML =
+        '<div class="perm-name">' + item.objectName + '</div>' +
+        '<div class="crud-row">' +
+        ['CREATE','READ','UPDATE','DELETE'].map(function (op) {
+          return '<span class="ctag ' + (p[op] ? 'y' : 'n') + '">' + op[0] + '</span>';
+        }).join('') +
+        '</div>';
+      grid.appendChild(card);
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GET_SETTINGS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function emitGetSettings() {
+    if (!shellSdk) return;
+
+    var keys = ['userPerson', ['CoreSystems', 'FSM', 'StandaloneCompany']];
+
+    function handler(resp, origin) {
+      log('✅ GET_SETTINGS reçu', 's');
+      var list = Array.isArray(resp) ? resp : [resp];
+      renderSettings(list);
+      shellSdk.off(SHELL_EVENTS.Version1.GET_SETTINGS, handler);
+    }
+
+    shellSdk.on(SHELL_EVENTS.Version1.GET_SETTINGS, handler);
+    shellSdk.emit(SHELL_EVENTS.Version1.GET_SETTINGS, keys);
+    log('📤 GET_SETTINGS émis', 's');
+  }
+
+  function renderSettings(list) {
+    var container = document.getElementById('settingsList');
+    container.innerHTML = '';
+    list.forEach(function (item) {
+      var row = document.createElement('div');
+      row.className = 'set-row';
+      var val = typeof item.value === 'object'
+        ? JSON.stringify(item.value)
+        : String(item.value ?? '—');
+      row.innerHTML =
+        '<span class="set-key">' + item.key + '</span>' +
+        '<span class="set-val">' + val + '</span>';
+      container.appendChild(row);
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GET_STORAGE_ITEM  (Version 2)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function emitGetStorageItem() {
+    if (!shellSdk) return;
+
+    shellSdk.on(SHELL_EVENTS.Version2.GET_STORAGE_ITEM, function (resp, origin) {
+      log('📦 GET_STORAGE_ITEM → ' + resp.key + ' = ' + JSON.stringify(resp.value), 's');
+    });
+
+    shellSdk.emit(SHELL_EVENTS.Version2.GET_STORAGE_ITEM, CONFIG.storageKeys);
+    log('📤 GET_STORAGE_ITEM émis pour : ' + CONFIG.storageKeys.join(', '), 's');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // UPLOAD & GENERATE
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function initUpload() {
+    var fileInput = document.getElementById('fileInput');
+    var dropZone  = document.getElementById('dropZone');
+    var btnGen    = document.getElementById('btnGen');
+    var btnClear  = document.getElementById('btnClear');
+
+    // Drag & drop
+    dropZone.addEventListener('dragover', function (e) {
       e.preventDefault();
-      dropZone.style.borderColor = '#d1d5db';
-      dropZone.style.background = '';
-      const file = e.dataTransfer.files[0];
-      if (file) {
-        const dt = new DataTransfer();
-        dt.items.add(file);
-        fileInput.files = dt.files;
-        fileName.textContent = file.name;
-        fileChosen.style.display = 'flex';
-        dropZone.style.display = 'none';
-        submitBtn.disabled = false;
-        document.getElementById('s2').classList.add('done');
-      }
+      dropZone.classList.add('over');
     });
-  </script>
+    dropZone.addEventListener('dragleave', function () {
+      dropZone.classList.remove('over');
+    });
+    dropZone.addEventListener('drop', function (e) {
+      e.preventDefault();
+      dropZone.classList.remove('over');
+      var file = e.dataTransfer.files[0];
+      if (file) setFile(file);
+    });
+
+    fileInput.addEventListener('change', function () {
+      if (fileInput.files[0]) setFile(fileInput.files[0]);
+    });
+
+    btnGen.addEventListener('click', generateZip);
+    btnClear.addEventListener('click', clearFile);
+  }
+
+  function setFile(file) {
+    selectedFile = file;
+    document.getElementById('fileName').textContent  = file.name;
+    document.getElementById('fileChip').classList.add('show');
+    document.getElementById('btnGen').disabled = false;
+    log('📎 Fichier sélectionné : ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' Ko)', 'i');
+  }
+
+  function clearFile() {
+    selectedFile = null;
+    document.getElementById('fileInput').value        = '';
+    document.getElementById('fileChip').classList.remove('show');
+    document.getElementById('errBanner').classList.remove('show');
+    document.getElementById('btnGen').disabled = true;
+    document.getElementById('progWrap').classList.remove('show');
+    document.getElementById('progBar').style.width = '0%';
+    log('🗑 Fichier effacé', 'w');
+  }
+
+  function generateZip() {
+    if (!selectedFile) return;
+
+    var progWrap = document.getElementById('progWrap');
+    var progBar  = document.getElementById('progBar');
+    var btnGen   = document.getElementById('btnGen');
+
+    progWrap.classList.add('show');
+    progBar.style.width = '20%';
+    btnGen.disabled = true;
+    log('⚡ Envoi du fichier au serveur…', 'i');
+
+    var formData = new FormData();
+    formData.append('excel_file', selectedFile);
+
+    // Notifier le Shell (optionnel) via TO_APP
+    if (shellSdk && SHELL_EVENTS) {
+      shellSdk.emit(SHELL_EVENTS.Version1.TO_APP, {
+        event:    'GENERATE_STARTED',
+        fileName: selectedFile.name,
+      });
+    }
+
+    progBar.style.width = '50%';
+
+    fetch('/generate', { method: 'POST', body: formData })
+      .then(function (res) {
+        if (!res.ok) throw new Error('Erreur serveur ' + res.status);
+        progBar.style.width = '90%';
+        return res.blob();
+      })
+      .then(function (blob) {
+        progBar.style.width = '100%';
+        log('✅ ZIP généré avec succès !', 'i');
+        toast('ZIP généré avec succès !', 'success');
+
+        // Déclencher le téléchargement
+        var url  = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href     = url;
+        link.download = 'resultat.zip';
+        link.click();
+        URL.revokeObjectURL(url);
+
+        setTimeout(function () {
+          progWrap.classList.remove('show');
+          progBar.style.width = '0%';
+          btnGen.disabled = false;
+        }, 1500);
+      })
+      .catch(function (err) {
+        log('❌ Erreur : ' + err.message, 'e');
+        toast('Erreur lors de la génération', 'error');
+        showError(err.message);
+        progWrap.classList.remove('show');
+        btnGen.disabled = false;
+      });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DÉMARRAGE
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  document.addEventListener('DOMContentLoaded', function () {
+    initUpload();
+    initSdk();     // charge le SDK et orchestre tous les événements FSM
+  });
+
+})();
+</script>
 </body>
 </html>
