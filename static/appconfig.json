@@ -1,0 +1,58 @@
+{
+  "name": "fsm-excel-processor",
+  "provider": "YourCompanyName",
+  "description": "Extension de traitement de fichiers Excel vers ZIP, intégrée à SAP Field Service Management.",
+  "version": "1.0.0",
+  "icon": "https://fsm-tasklist-load.onrender.com/static/icon.png",
+  "useShellSDK": true,
+
+  "outletPositions": [
+    "MAIN_SIDE_PANEL",
+    "ACTIVITY_SIDE_PANEL"
+  ],
+
+  "optimalHeight": 800,
+
+  "parametersInformation": "Renseignez le Client ID et le Client Secret fournis lors de l'enregistrement de l'extension dans FSM Admin.",
+
+  "parameters": [
+    {
+      "name": "clientId",
+      "type": "TEXT",
+      "label": "Client ID",
+      "placeholder": "ex: fsm-excel-extension",
+      "regexValidation": "^[a-z0-9\\-]+$"
+    },
+    {
+      "name": "clientSecret",
+      "type": "TEXT",
+      "label": "Client Secret",
+      "placeholder": "Votre secret applicatif FSM"
+    }
+  ],
+
+  "modalUrls": [
+    "https://fsm-tasklist-load.onrender.com"
+  ],
+
+  "deploymentUrl": "https://fsm-tasklist-load.onrender.com",
+
+  "translations": [
+    {
+      "lang": "fr",
+      "name": "Processeur Excel FSM",
+      "description": "Traitement de fichiers Excel vers ZIP, intégré à SAP FSM.",
+      "parametersInformation": "Renseignez le Client ID et le Client Secret fournis lors de l'enregistrement de l'extension."
+    },
+    {
+      "lang": "en",
+      "name": "FSM Excel Processor",
+      "description": "Excel to ZIP file processing, integrated with SAP Field Service Management.",
+      "parametersInformation": "Enter the Client ID and Client Secret provided when registering the extension in FSM Admin."
+    }
+  ],
+
+  "extensionAttributes": [
+    "allow-downloads"
+  ]
+}
