@@ -5,16 +5,9 @@
   "version": "1.0.0",
   "icon": "https://fsm-tasklist-load.onrender.com/static/icon.png",
   "useShellSDK": true,
-
-  "outletPositions": [
-    "MAIN_SIDE_PANEL",
-    "ACTIVITY_SIDE_PANEL"
-  ],
-
+  "outletPositions": [],
   "optimalHeight": 800,
-
   "parametersInformation": "Renseignez le Client ID et le Client Secret fournis lors de l'enregistrement de l'extension dans FSM Admin.",
-
   "parameters": [
     {
       "name": "clientId",
@@ -30,13 +23,10 @@
       "placeholder": "Votre secret applicatif FSM"
     }
   ],
-
   "modalUrls": [
     "https://fsm-tasklist-load.onrender.com"
   ],
-
   "deploymentUrl": "https://fsm-tasklist-load.onrender.com",
-
   "translations": [
     {
       "lang": "fr",
@@ -51,7 +41,6 @@
       "parametersInformation": "Enter the Client ID and Client Secret provided when registering the extension in FSM Admin."
     }
   ],
-
   "extensionAttributes": [
     "allow-downloads"
   ]
