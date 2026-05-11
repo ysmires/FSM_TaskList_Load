@@ -230,16 +230,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Storage / Préférences utilisateur -->
-    <div class="panel">
-      <div class="ph"><div class="ph-icon blue">🗂️</div><h2>Préférences utilisateur</h2></div>
-      <div class="pb">
-        <div id="storageList" class="set-list">
-          <p style="font-size:12px;color:var(--muted)">En attente…</p>
-        </div>
-      </div>
-    </div>
   </aside>
 
   <!-- ── MAIN ── -->
@@ -585,41 +575,12 @@
   function emitGetStorageItem() {
     if (!shellSdk) return;
 
-    var STORAGE_LABELS = {
-      'Cockpit_SelectedCompanyName': 'Société sélectionnée',
-      'Cockpit_SelectedLanguage':    'Langue',
-      'Cockpit_SelectedLocale':      'Locale',
-      'Shell_IsSideNavigationCollapsed': 'Nav. réduite',
-      'Shell_SelectedThemeId':       'Thème',
-    };
-
-    shellSdk.on(SHELL_EVENTS.Version2.GET_STORAGE_ITEM, function (resp) {
+    shellSdk.on(SHELL_EVENTS.Version2.GET_STORAGE_ITEM, function (resp, origin) {
       log('📦 GET_STORAGE_ITEM → ' + resp.key + ' = ' + JSON.stringify(resp.value), 's');
-      renderStorageItem(resp.key, resp.value, STORAGE_LABELS[resp.key]);
     });
 
     shellSdk.emit(SHELL_EVENTS.Version2.GET_STORAGE_ITEM, CONFIG.storageKeys);
     log('📤 GET_STORAGE_ITEM émis pour : ' + CONFIG.storageKeys.join(', '), 's');
-  }
-
-  function renderStorageItem(key, value, label) {
-    var container = document.getElementById('storageList');
-    var placeholder = container.querySelector('p');
-    if (placeholder) placeholder.remove();
-
-    var existing = document.getElementById('storage-' + key);
-    if (existing) {
-      existing.querySelector('.set-val').textContent = value === null ? '—' : String(value);
-      return;
-    }
-
-    var row = document.createElement('div');
-    row.className = 'set-row';
-    row.id = 'storage-' + key;
-    row.innerHTML =
-      '<span class="set-key">' + (label || key) + '</span>' +
-      '<span class="set-val">' + (value === null ? '—' : String(value)) + '</span>';
-    container.appendChild(row);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
